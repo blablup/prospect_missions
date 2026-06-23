@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Prospect Missions Tweak
+  Autor   : Prospector
+  Version : 100  (1.0.0)
+  X4      : 9.x
+
+  Macht die generischen "Bezug aus lokalen Regionen"-Missionen
+  (GM_Find_Resources) wieder spielbar.
+
+  Stand 1.0 (v100):
+    - Erfolgsvergleich in rml_find_resources mit konfigurierbarer Toleranz
+      (Default -2 Rating-Punkte ~= 2/3 Stern). Behebt das Problem, dass eine
+      Sonde mit sichtbar gleicher Sternzahl trotzdem als "nicht genuegend"
+      gewertet wird (Vergleich nutzt den exakten 0-15-Rating, die UI rundet).
+    - Bereits platzierte Spieler-Ressourcensonden im Zielsektor werden
+      ebenfalls geprueft (Loop alle 300s, abschaltbar). Vanilla wertet nur
+      neu gestartete Sonden.
+    - Wirkt auch auf bereits laufende Missionen (MD-Action-Logik wird beim
+      Laden neu eingelesen).
+    - Optionales Optionsmenue via sn_mod_support_apis (Simple Menu API):
+      Slider "Nachsicht" + Checkbox "Vorhandene Sonden". Ohne SMAPI greifen
+      die Defaults.
+
+  Abhaengigkeit: sn_mod_support_apis (Steam Workshop ID: ws_2042901274),
+  optional - der Mod laedt und funktioniert auch ohne (dann nur Defaults).
+-->
+<content
+  id="prospect_missions"
+  name="Prospect Missions Tweak"
+  description="Makes the generic 'Find Resources' guild missions playable again. Adds a configurable yield-rating tolerance so probes with the visibly required number of stars actually count, and also evaluates resource probes you already placed in the target sector. Works on missions already in progress. Optional in-game options menu via Simple Menu API."
+  version="100"
+  date="2026-06-23"
+  author="Prospector"
+  save="false"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="content.xsd">
+
+  <!--
+    optional="true": Mod laedt auch ohne sn_mod_support_apis. Ohne das API
+    fehlt nur das Optionsmenue; die Defaults (Toleranz -2, vorhandene Sonden an)
+    gelten trotzdem. "ws_2042901274" ist die Steam-Workshop-ID.
+  -->
+  <dependency id="ws_2042901274" optional="true"/>
+
+</content>

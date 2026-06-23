@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Deutsch (l049) -->
+<language id="49">
+  <page id="55801" title="Prospect Missions" descr="Prospect Missions Tweak UI-Texte" voice="no">
+    <t id="1">Prospect Missions Tweak</t>
+    <t id="2">Prospect Missions</t>
+    <t id="10">Nachsicht (0 = streng, 6 = sehr leicht)</t>
+    <t id="11">Bereits platzierte Ressourcensonden mitzählen</t>
+    <t id="12">Passt die "Bezug aus lokalen Regionen"-Missionen an. Nachsicht senkt die geforderte Bewertung (in 1/3-Stern-Schritten).</t>
+  </page>
+</language>

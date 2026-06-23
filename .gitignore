@@ -1,0 +1,12 @@
+# Claude Code lokale Einstellungen (maschinenspezifisch)
+.claude/settings.local.json
+
+# OS / Editor
+Thumbs.db
+desktop.ini
+*.swp
+*~
+
+# OpenCloud / Dropbox Konflikt-Kopien
+*conflicted copy*
+*(conflicted copy*

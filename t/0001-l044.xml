@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- English (l044) -->
+<language id="44">
+  <page id="55801" title="Prospect Missions" descr="Prospect Missions Tweak UI texts" voice="no">
+    <t id="1">Prospect Missions Tweak</t>
+    <t id="2">Prospect Missions</t>
+    <t id="10">Leniency (0 = strict, 6 = very easy)</t>
+    <t id="11">Also count resource probes already placed</t>
+    <t id="12">Adjusts the 'Find Resources' guild missions. Leniency lowers the required yield rating (in 1/3-star steps).</t>
+  </page>
+</language>

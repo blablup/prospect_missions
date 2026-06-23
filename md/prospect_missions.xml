@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mdscript name="Prospect_Missions"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="md.xsd">
+  <cues>
+
+    <!-- Kompilierungs-Probe (Log-Marker) -->
+    <cue name="PM_Loaded_Probe">
+      <actions>
+        <debug_text text="'[PM][PROBE] prospect_missions.xml kompiliert.'" filter="error"/>
+      </actions>
+    </cue>
+
+    <!-- ══════════ INITIALISIERUNG ══════════
+         Defaults setzen, dann ggf. aus dem Savegame (player.entity) ueberschreiben.
+         Greift bei jedem Laden. Der Patch in rml_find_resources nutzt zusaetzlich
+         Inline-Defaults, sodass die Lockerung auch ohne diesen Init und ohne SMAPI
+         funktioniert. -->
+    <cue name="PM_Init">
+      <conditions>
+        <event_game_loaded/>
+      </conditions>
+      <actions>
+        <!-- Toleranz: um wie viele Rating-Punkte (0-15-Skala, 3 = 1 voller Stern)
+             die Sonde unter dem geforderten Wert liegen darf. Default -2. -->
+        <set_value name="global.$pm_tolerance" exact="-2"/>
+        <!-- Bereits platzierte Spieler-Sonden im Zielsektor mitpruefen. Default an. -->
+        <set_value name="global.$pm_check_existing" exact="true"/>
+
+        <!-- Persistierte Spieler-Auswahl wiederherstellen -->
+        <do_if value="player.entity.$pm_saved_tolerance?">
+          <set_value name="global.$pm_tolerance" exact="player.entity.$pm_saved_tolerance"/>
+        </do_if>
+        <do_if value="player.entity.$pm_saved_check_existing?">
+          <set_value name="global.$pm_check_existing" exact="player.entity.$pm_saved_check_existing"/>
+        </do_if>
+
+        <debug_text text="'[PM] Init: tolerance=' + global.$pm_tolerance + ' check_existing=' + global.$pm_check_existing" filter="error"/>
+      </actions>
+    </cue>
+
+    <!-- ══════════ SMAPI-OPTIONSMENUE (optional) ══════════
+         Registriert sich nur, wenn sn_mod_support_apis (Simple Menu API) vorhanden
+         ist und sein Reloaded-Signal feuert. Fehlt das API, passiert hier nichts -
+         die Defaults aus PM_Init bzw. die Inline-Defaults greifen weiterhin. -->
+    <cue name="PM_Menu_Register" instantiate="true">
+      <conditions>
+        <event_cue_signalled cue="md.Simple_Menu_API.Reloaded"/>
+      </conditions>
+      <actions>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Register_Options_Menu"
+          param="table[
+            $id      = 'pm_options_menu',
+            $title   = readtext.{55801}.{2},
+            $onOpen  = PM_Menu_Fill,
+            $columns = 3
+          ]"/>
+        <debug_text text="'[PM] Optionsmenue registriert.'" filter="error"/>
+      </actions>
+    </cue>
+
+    <!-- Menue-Inhalt beim Oeffnen aufbauen -->
+    <cue name="PM_Menu_Fill" instantiate="true">
+      <conditions><event_cue_signalled/></conditions>
+      <actions>
+        <!-- Toleranz invertiert anzeigen: Slider 0..6 = "Nachsicht", intern negativ.
+             0 = streng (Vanilla), hoeher = einfacher. -->
+        <set_value name="$tol_display" exact="if global.$pm_tolerance? then -global.$pm_tolerance else 2"/>
+        <set_value name="$chk" exact="if global.$pm_check_existing? then global.$pm_check_existing else true"/>
+
+        <!-- Hinweiszeile -->
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"
+          param="table[$selectable=false, $borderBelow=true]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text"
+          param="table[$col=1, $colSpan=3, $text=readtext.{55801}.{12}]"/>
+
+        <!-- Toleranz-Slider -->
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"
+          param="table[$selectable=true]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text"
+          param="table[$col=1, $text=readtext.{55801}.{10}]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Slider"
+          param="table[$col=2, $colSpan=2,
+                       $min=0, $max=6, $start=$tol_display, $step=1,
+                       $echo='pm_tolerance',
+                       $onSliderCellConfirm=PM_Slider_Confirm]"/>
+
+        <!-- Vorhandene-Sonden-Checkbox -->
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"
+          param="table[$selectable=true]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_CheckBox"
+          param="table[$col=1, $echo='pm_check_existing', $onClick=PM_CheckBox_Set,
+                       $checked=$chk, $x=20,
+                       $width='Helper.standardButtonHeight', $height='Helper.standardButtonHeight']"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text"
+          param="table[$col=2, $colSpan=2, $halign='left', $text=readtext.{55801}.{11}]"/>
+      </actions>
+    </cue>
+
+    <!-- Slider bestaetigt -> Toleranz speichern (global + persistent) -->
+    <cue name="PM_Slider_Confirm" instantiate="true">
+      <conditions><event_cue_signalled/></conditions>
+      <actions>
+        <do_if value="event.param.$echo == 'pm_tolerance'">
+          <set_value name="global.$pm_tolerance"             exact="-event.param.$value"/>
+          <set_value name="player.entity.$pm_saved_tolerance" exact="-event.param.$value"/>
+          <debug_text text="'[PM] Toleranz: ' + global.$pm_tolerance" filter="error"/>
+        </do_if>
+      </actions>
+    </cue>
+
+    <!-- Checkbox geklickt -> Flag speichern (global + persistent) -->
+    <cue name="PM_CheckBox_Set" instantiate="true">
+      <conditions><event_cue_signalled/></conditions>
+      <actions>
+        <set_value name="global.$pm_check_existing"             exact="event.param.$checked == 1"/>
+        <set_value name="player.entity.$pm_saved_check_existing" exact="event.param.$checked == 1"/>
+        <debug_text text="'[PM] Vorhandene Sonden zaehlen: ' + global.$pm_check_existing" filter="error"/>
+      </actions>
+    </cue>
+
+  </cues>
+</mdscript>

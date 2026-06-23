@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Diff-Patch fuer das Vanilla-Script md/rml_find_resources.xml (RML_Find_Resources).
+  Lockert die "Bezug aus lokalen Regionen"-Erfolgspruefung.
+  Alle Werte werden defensiv mit Inline-Default gelesen, sodass der Patch auch
+  ohne prospect_missions.xml/SMAPI funktioniert.
+-->
+<diff>
+
+  <!-- (1) Erfolgsvergleich lockern.
+       Vanilla: probe.bestyieldrating >= gefordert (exakter 0-15-Rating).
+       Neu:     probe.bestyieldrating >= gefordert + Toleranz (Default -2).
+       Loest das Rundungsproblem: sichtbar ★★★★, intern aber knapp drunter. -->
+  <replace sel='//cue[@name="CheckMissionStatus"]/actions//do_if[@value="$Probe.bestyieldrating.{$ware} ge $ResourceYieldRatingList.{$i}"]/@value'>$Probe.bestyieldrating.{$ware} ge ($ResourceYieldRatingList.{$i} + (if global.$pm_tolerance? then global.$pm_tolerance else -2))</replace>
+
+  <!-- (2) Bereits platzierte Spieler-Ressourcensonden im Zielsektor mitpruefen.
+       Vanilla wertet nur neu gestartete Sonden (siehe Vanilla-TODO in
+       CheckMissionStatus). Loop alle 300s, per Option abschaltbar.
+       Eingehaengt als Unter-Cue von StartMission -> selber Namespace, daher
+       Zugriff auf $Space/$ResourceList/$ResourceListDone/$ResultTable/$feedbackvalue
+       sowie die Cues Cleanup und UpdateBriefing. -->
+  <add sel="//cue[@name='StartMission']/cues">
+    <cue name="PM_CheckExistingProbes">
+      <delay exact="300s"/>
+      <actions>
+        <do_if value="if global.$pm_check_existing? then global.$pm_check_existing else true">
+          <find_object name="$PM_Probes" class="class.resourceprobe" space="$Space" owner="faction.player" multiple="true"/>
+          <do_all exact="$PM_Probes.count" counter="$pi">
+            <set_value name="$PM_Probe" exact="$PM_Probes.{$pi}"/>
+            <do_all exact="$ResourceList.count" counter="$i">
+              <set_value name="$ware" exact="$ResourceList.{$i}"/>
+              <do_if value="$ResourceListDone.{$i} == null" comment="noch nicht gefunden">
+                <do_if value="$PM_Probe.bestyieldrating.{$ware} ge ($ResourceYieldRatingList.{$i} + (if global.$pm_tolerance? then global.$pm_tolerance else -2))">
+                  <set_value name="$ResourceListDone.{$i}" exact="1" comment="bestanden"/>
+                  <do_if value="$ResultTable">
+                    <create_position name="$PM_ProbePos" object="$PM_Probe" space="$PM_Probe.sector"/>
+                    <set_value name="$ResultTable.{$ware}" exact="table[$Sector = $PM_Probe.sector, $Offset = $PM_ProbePos, $Probe = $PM_Probe]"/>
+                  </do_if>
+                </do_if>
+              </do_if>
+            </do_all>
+          </do_all>
+
+          <!-- Alle Ressourcen erfuellt? (gleiche Logik wie CheckMissionStatus) -->
+          <set_value name="$PM_PassedAll" exact="0"/>
+          <do_all exact="$ResourceListDone.count" counter="$i">
+            <do_if value="$ResourceListDone.{$i} != null">
+              <set_value name="$PM_PassedAll" operation="add"/>
+            </do_if>
+          </do_all>
+
+          <do_if value="$PM_PassedAll ge $ResourceListDone.count">
+            <set_value name="$feedbackvalue" exact="1" comment="Erfolg"/>
+            <signal_cue cue="Cleanup"/>
+          </do_if>
+          <do_else>
+            <signal_cue cue="UpdateBriefing"/>
+          </do_else>
+        </do_if>
+
+        <!-- Selbst-Reset: erneut nach 300s, solange die Mission laeuft -->
+        <reset_cue cue="PM_CheckExistingProbes"/>
+      </actions>
+    </cue>
+  </add>
+
+</diff>
