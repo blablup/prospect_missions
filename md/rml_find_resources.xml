@@ -15,30 +15,39 @@
 
   <!-- (2) Bereits platzierte Spieler-Ressourcensonden im Zielsektor mitpruefen.
        Vanilla wertet nur neu gestartete Sonden (siehe Vanilla-TODO in
-       CheckMissionStatus). Loop alle 300s, per Option abschaltbar.
-       Eingehaengt als Unter-Cue von StartMission -> selber Namespace, daher
-       Zugriff auf $Space/$ResourceList/$ResourceListDone/$ResultTable/$feedbackvalue
-       sowie die Cues Cleanup und UpdateBriefing. -->
+       CheckMissionStatus). Eingehaengt als Unter-Cues von StartMission -> selber
+       Namespace, daher Zugriff auf $Space/$ResourceList/$ResourceListDone/
+       $ResultTable/$feedbackvalue sowie die Cues Cleanup und UpdateBriefing. -->
   <add sel="//cue[@name='StartMission']/cues">
-    <cue name="PM_CheckExistingProbes">
-      <delay exact="300s"/>
+
+    <!-- Worker: scannt vorhandene Sonden, ausgeloest per Signal -->
+    <cue name="PM_CheckExistingProbes" instantiate="true">
+      <conditions>
+        <event_cue_signalled/>
+      </conditions>
       <actions>
+        <set_value name="$pm_tol" exact="if global.$pm_tolerance? then global.$pm_tolerance else -2"/>
+        <find_object name="$PM_Probes" class="class.resourceprobe" space="$Space" owner="faction.player" multiple="true"/>
+        <debug_text text="'[PM] scan: space=' + $Space.knownname + ' tol=' + $pm_tol + ' player-probes=' + $PM_Probes.count + ' resources=' + $ResourceList.count" filter="error"/>
+
         <do_if value="if global.$pm_check_existing? then global.$pm_check_existing else true">
-          <find_object name="$PM_Probes" class="class.resourceprobe" space="$Space" owner="faction.player" multiple="true"/>
-          <do_all exact="$PM_Probes.count" counter="$pi">
-            <set_value name="$PM_Probe" exact="$PM_Probes.{$pi}"/>
-            <do_all exact="$ResourceList.count" counter="$i">
-              <set_value name="$ware" exact="$ResourceList.{$i}"/>
-              <do_if value="$ResourceListDone.{$i} == null" comment="noch nicht gefunden">
-                <do_if value="$PM_Probe.bestyieldrating.{$ware} ge ($ResourceYieldRatingList.{$i} + (if global.$pm_tolerance? then global.$pm_tolerance else -2))">
+          <do_all exact="$ResourceList.count" counter="$i">
+            <set_value name="$ware" exact="$ResourceList.{$i}"/>
+            <debug_text text="'[PM]   ware=' + $ware.name + ' required=' + $ResourceYieldRatingList.{$i} + ' threshold=' + ($ResourceYieldRatingList.{$i} + $pm_tol) + ' done=' + $ResourceListDone.{$i}" filter="error"/>
+            <do_if value="$ResourceListDone.{$i} == null" comment="noch nicht gefunden">
+              <do_all exact="$PM_Probes.count" counter="$pi">
+                <set_value name="$PM_Probe" exact="$PM_Probes.{$pi}"/>
+                <debug_text text="'[PM]     probe ' + $PM_Probe + ' bestyieldrating=' + $PM_Probe.bestyieldrating.{$ware}" filter="error"/>
+                <do_if value="$ResourceListDone.{$i} == null and ($PM_Probe.bestyieldrating.{$ware} ge ($ResourceYieldRatingList.{$i} + $pm_tol))">
                   <set_value name="$ResourceListDone.{$i}" exact="1" comment="bestanden"/>
+                  <debug_text text="'[PM]     -> PASSED via existing probe'" filter="error"/>
                   <do_if value="$ResultTable">
                     <create_position name="$PM_ProbePos" object="$PM_Probe" space="$PM_Probe.sector"/>
                     <set_value name="$ResultTable.{$ware}" exact="table[$Sector = $PM_Probe.sector, $Offset = $PM_ProbePos, $Probe = $PM_Probe]"/>
                   </do_if>
                 </do_if>
-              </do_if>
-            </do_all>
+              </do_all>
+            </do_if>
           </do_all>
 
           <!-- Alle Ressourcen erfuellt? (gleiche Logik wie CheckMissionStatus) -->
@@ -57,11 +66,26 @@
             <signal_cue cue="UpdateBriefing"/>
           </do_else>
         </do_if>
-
-        <!-- Selbst-Reset: erneut nach 300s, solange die Mission laeuft -->
-        <reset_cue cue="PM_CheckExistingProbes"/>
       </actions>
     </cue>
+
+    <!-- Treiber A: einmalige Pruefung kurz nach Aktivierung/Laden -->
+    <cue name="PM_CheckExistingProbes_Init">
+      <delay exact="5s"/>
+      <actions>
+        <signal_cue cue="PM_CheckExistingProbes"/>
+      </actions>
+    </cue>
+
+    <!-- Treiber B: periodische Pruefung alle 300s, solange die Mission laeuft -->
+    <cue name="PM_CheckExistingProbes_Loop">
+      <delay exact="300s"/>
+      <actions>
+        <signal_cue cue="PM_CheckExistingProbes"/>
+        <reset_cue cue="PM_CheckExistingProbes_Loop"/>
+      </actions>
+    </cue>
+
   </add>
 
 </diff>
