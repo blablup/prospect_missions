@@ -32,8 +32,10 @@ Prospect Missions**:
 
 - *Nachsicht* (0 = streng/Vanilla … 6 = sehr leicht)
 - *Bereits platzierte Sonden mitzählen* (an/aus)
+- *Debug-Log* (an/aus, Default aus)
 
-Ohne SMAPI laufen die Defaults (Toleranz -2, vorhandene Sonden an).
+Ohne SMAPI laufen die Defaults (Toleranz -2, vorhandene Sonden an,
+Debug-Log aus).
 
 ## Save-Sicherheit
 

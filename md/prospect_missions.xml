@@ -4,10 +4,12 @@
           xsi:noNamespaceSchemaLocation="md.xsd">
   <cues>
 
-    <!-- Kompilierungs-Probe (Log-Marker) -->
+    <!-- Kompilierungs-Probe (Log-Marker). Nur bei aktivem Debug-Log. -->
     <cue name="PM_Loaded_Probe">
       <actions>
-        <debug_text text="'[PM][PROBE] prospect_missions.xml kompiliert.'" filter="error"/>
+        <do_if value="global.$pm_debug? and global.$pm_debug">
+          <debug_text text="'[PM][PROBE] prospect_missions.xml kompiliert.'" filter="error"/>
+        </do_if>
       </actions>
     </cue>
 
@@ -26,6 +28,8 @@
         <set_value name="global.$pm_tolerance" exact="-2"/>
         <!-- Bereits platzierte Spieler-Sonden im Zielsektor mitpruefen. Default an. -->
         <set_value name="global.$pm_check_existing" exact="true"/>
+        <!-- Debug-Log ins debuglog.log. Default aus. -->
+        <set_value name="global.$pm_debug" exact="false"/>
 
         <!-- Persistierte Spieler-Auswahl wiederherstellen -->
         <do_if value="player.entity.$pm_saved_tolerance?">
@@ -34,8 +38,13 @@
         <do_if value="player.entity.$pm_saved_check_existing?">
           <set_value name="global.$pm_check_existing" exact="player.entity.$pm_saved_check_existing"/>
         </do_if>
+        <do_if value="player.entity.$pm_saved_debug?">
+          <set_value name="global.$pm_debug" exact="player.entity.$pm_saved_debug"/>
+        </do_if>
 
-        <debug_text text="'[PM] Init: tolerance=' + global.$pm_tolerance + ' check_existing=' + global.$pm_check_existing" filter="error"/>
+        <do_if value="global.$pm_debug">
+          <debug_text text="'[PM] Init: tolerance=' + global.$pm_tolerance + ' check_existing=' + global.$pm_check_existing + ' debug=' + global.$pm_debug" filter="error"/>
+        </do_if>
       </actions>
     </cue>
 
@@ -55,7 +64,9 @@
             $onOpen  = PM_Menu_Fill,
             $columns = 3
           ]"/>
-        <debug_text text="'[PM] Optionsmenue registriert.'" filter="error"/>
+        <do_if value="global.$pm_debug? and global.$pm_debug">
+          <debug_text text="'[PM] Optionsmenue registriert.'" filter="error"/>
+        </do_if>
       </actions>
     </cue>
 
@@ -67,6 +78,7 @@
              0 = streng (Vanilla), hoeher = einfacher. -->
         <set_value name="$tol_display" exact="if global.$pm_tolerance? then -global.$pm_tolerance else 2"/>
         <set_value name="$chk" exact="if global.$pm_check_existing? then global.$pm_check_existing else true"/>
+        <set_value name="$dbg" exact="if global.$pm_debug? then global.$pm_debug else false"/>
 
         <!-- Hinweiszeile -->
         <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"
@@ -94,6 +106,16 @@
                        $width='Helper.standardButtonHeight', $height='Helper.standardButtonHeight']"/>
         <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text"
           param="table[$col=2, $colSpan=2, $halign='left', $text=readtext.{55801}.{11}]"/>
+
+        <!-- Debug-Log-Checkbox -->
+        <signal_cue_instantly cue="md.Simple_Menu_API.Add_Row"
+          param="table[$selectable=true]"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_CheckBox"
+          param="table[$col=1, $echo='pm_debug', $onClick=PM_CheckBox_Set,
+                       $checked=$dbg, $x=20,
+                       $width='Helper.standardButtonHeight', $height='Helper.standardButtonHeight']"/>
+        <signal_cue_instantly cue="md.Simple_Menu_API.Make_Text"
+          param="table[$col=2, $colSpan=2, $halign='left', $text=readtext.{55801}.{13}]"/>
       </actions>
     </cue>
 
@@ -104,18 +126,29 @@
         <do_if value="event.param.$echo == 'pm_tolerance'">
           <set_value name="global.$pm_tolerance"             exact="-event.param.$value"/>
           <set_value name="player.entity.$pm_saved_tolerance" exact="-event.param.$value"/>
-          <debug_text text="'[PM] Toleranz: ' + global.$pm_tolerance" filter="error"/>
+          <do_if value="global.$pm_debug? and global.$pm_debug">
+            <debug_text text="'[PM] Toleranz: ' + global.$pm_tolerance" filter="error"/>
+          </do_if>
         </do_if>
       </actions>
     </cue>
 
-    <!-- Checkbox geklickt -> Flag speichern (global + persistent) -->
+    <!-- Checkbox geklickt -> passendes Flag speichern (global + persistent) -->
     <cue name="PM_CheckBox_Set" instantiate="true">
       <conditions><event_cue_signalled/></conditions>
       <actions>
-        <set_value name="global.$pm_check_existing"             exact="event.param.$checked == 1"/>
-        <set_value name="player.entity.$pm_saved_check_existing" exact="event.param.$checked == 1"/>
-        <debug_text text="'[PM] Vorhandene Sonden zaehlen: ' + global.$pm_check_existing" filter="error"/>
+        <set_value name="$on" exact="event.param.$checked == 1"/>
+        <do_if value="event.param.$echo == 'pm_check_existing'">
+          <set_value name="global.$pm_check_existing"             exact="$on"/>
+          <set_value name="player.entity.$pm_saved_check_existing" exact="$on"/>
+        </do_if>
+        <do_elseif value="event.param.$echo == 'pm_debug'">
+          <set_value name="global.$pm_debug"             exact="$on"/>
+          <set_value name="player.entity.$pm_saved_debug" exact="$on"/>
+        </do_elseif>
+        <do_if value="global.$pm_debug? and global.$pm_debug">
+          <debug_text text="'[PM] Setting ' + event.param.$echo + '=' + $on" filter="error"/>
+        </do_if>
       </actions>
     </cue>
 

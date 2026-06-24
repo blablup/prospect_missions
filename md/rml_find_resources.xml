@@ -27,20 +27,29 @@
       </conditions>
       <actions>
         <set_value name="$pm_tol" exact="if global.$pm_tolerance? then global.$pm_tolerance else -2"/>
+        <set_value name="$pm_dbg" exact="if global.$pm_debug? then global.$pm_debug else false"/>
         <find_object name="$PM_Probes" class="class.resourceprobe" space="$Space" owner="faction.player" multiple="true"/>
-        <debug_text text="'[PM] scan: space=' + $Space.knownname + ' tol=' + $pm_tol + ' player-probes=' + $PM_Probes.count + ' resources=' + $ResourceList.count" filter="error"/>
+        <do_if value="$pm_dbg">
+          <debug_text text="'[PM] scan: space=' + $Space.knownname + ' tol=' + $pm_tol + ' player-probes=' + $PM_Probes.count + ' resources=' + $ResourceList.count" filter="error"/>
+        </do_if>
 
         <do_if value="if global.$pm_check_existing? then global.$pm_check_existing else true">
           <do_all exact="$ResourceList.count" counter="$i">
             <set_value name="$ware" exact="$ResourceList.{$i}"/>
-            <debug_text text="'[PM]   ware=' + $ware.name + ' required=' + $ResourceYieldRatingList.{$i} + ' threshold=' + ($ResourceYieldRatingList.{$i} + $pm_tol) + ' done=' + $ResourceListDone.{$i}" filter="error"/>
+            <do_if value="$pm_dbg">
+              <debug_text text="'[PM]   ware=' + $ware.name + ' required=' + $ResourceYieldRatingList.{$i} + ' threshold=' + ($ResourceYieldRatingList.{$i} + $pm_tol) + ' done=' + $ResourceListDone.{$i}" filter="error"/>
+            </do_if>
             <do_if value="$ResourceListDone.{$i} == null" comment="noch nicht gefunden">
               <do_all exact="$PM_Probes.count" counter="$pi">
                 <set_value name="$PM_Probe" exact="$PM_Probes.{$pi}"/>
-                <debug_text text="'[PM]     probe ' + $PM_Probe + ' bestyieldrating=' + $PM_Probe.bestyieldrating.{$ware}" filter="error"/>
+                <do_if value="$pm_dbg">
+                  <debug_text text="'[PM]     probe ' + $PM_Probe + ' bestyieldrating=' + $PM_Probe.bestyieldrating.{$ware}" filter="error"/>
+                </do_if>
                 <do_if value="$ResourceListDone.{$i} == null and ($PM_Probe.bestyieldrating.{$ware} ge ($ResourceYieldRatingList.{$i} + $pm_tol))">
                   <set_value name="$ResourceListDone.{$i}" exact="1" comment="bestanden"/>
-                  <debug_text text="'[PM]     -> PASSED via existing probe'" filter="error"/>
+                  <do_if value="$pm_dbg">
+                    <debug_text text="'[PM]     -> PASSED via existing probe'" filter="error"/>
+                  </do_if>
                   <do_if value="$ResultTable">
                     <create_position name="$PM_ProbePos" object="$PM_Probe" space="$PM_Probe.sector"/>
                     <set_value name="$ResultTable.{$ware}" exact="table[$Sector = $PM_Probe.sector, $Offset = $PM_ProbePos, $Probe = $PM_Probe]"/>

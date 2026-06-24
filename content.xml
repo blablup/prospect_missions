@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   Prospect Missions Tweak
-  Autor   : Prospector
-  Version : 100  (1.0.0)
+  Autor   : Rumo von Zamonien
+  Version : 101  (1.0.1)
   X4      : 9.x
 
   Macht die generischen "Bezug aus lokalen Regionen"-Missionen
@@ -22,6 +22,11 @@
       Slider "Nachsicht" + Checkbox "Vorhandene Sonden". Ohne SMAPI greifen
       die Defaults.
 
+  Stand 1.0.1 (v101):
+    - Debug-Log abschaltbar (Default AUS). Alle [PM]-Diagnoseausgaben hinter
+      global.$pm_debug; per Checkbox im Optionsmenue umschaltbar und im
+      Savegame persistiert.
+
   Abhaengigkeit: sn_mod_support_apis (Steam Workshop ID: ws_2042901274),
   optional - der Mod laedt und funktioniert auch ohne (dann nur Defaults).
 -->
@@ -29,9 +34,9 @@
   id="prospect_missions"
   name="Prospect Missions Tweak"
   description="Makes the generic 'Find Resources' guild missions playable again. Adds a configurable yield-rating tolerance so probes with the visibly required number of stars actually count, and also evaluates resource probes you already placed in the target sector. Works on missions already in progress. Optional in-game options menu via Simple Menu API."
-  version="100"
-  date="2026-06-23"
-  author="Prospector"
+  version="101"
+  date="2026-06-24"
+  author="Rumo von Zamonien"
   save="false"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:noNamespaceSchemaLocation="content.xsd">
