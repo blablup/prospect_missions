@@ -10,3 +10,6 @@ desktop.ini
 # OpenCloud / Dropbox Konflikt-Kopien
 *conflicted copy*
 *(conflicted copy*
+
+# Build-Artefakte (Release-Zip, Nexus-Text)
+dist/
